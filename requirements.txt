@@ -4,9 +4,7 @@ numpy
 plotly>=5.20
 scipy
 requests
-langchain-community
 langchain-core
-langchain-openai
-openai>=1.0.0
+langchain-community
 langchain-groq
 groq
