@@ -358,17 +358,48 @@ with tab1:
     st.markdown("### 💬 Synthetic Data Education Assistant")
 
     try:
-        from langchain_community.chat_models import ChatOllama
+        # Use hosted LLMs on cloud if available; fall back to local Ollama when running locally.
         from langchain_core.messages import AIMessage, HumanMessage
-
+        import os, requests
 
         @st.cache_resource
         def init_bot():
+            # Prefer hosted providers on Streamlit Cloud
+            openai_key = None
             try:
-                return ChatOllama(model="phi3:mini")
-            except Exception as e:
-                st.error(f"Could not connect to Ollama. Please ensure Ollama is installed and running. Error: {e}")
-                return None
+                openai_key = st.secrets.get("OPENAI_API_KEY")  # Streamlit Cloud
+            except Exception:
+                pass
+            if not openai_key:
+                openai_key = os.getenv("OPENAI_API_KEY")
+
+            groq_key = None
+            try:
+                groq_key = st.secrets.get("GROQ_API_KEY")
+            except Exception:
+                pass
+            if not groq_key:
+                groq_key = os.getenv("GROQ_API_KEY")
+
+            if openai_key:
+                from langchain_openai import ChatOpenAI
+                return ChatOpenAI(model="gpt-4o-mini", api_key=openai_key)
+            elif groq_key:
+                from langchain_groq import ChatGroq
+                return ChatGroq(model="llama-3.1-8b-instant", api_key=groq_key)
+            else:
+                # Try local Ollama (works on your laptop; not available on Streamlit Cloud)
+                from langchain_community.chat_models import ChatOllama
+                base_url = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+                try:
+                    requests.get(f"{base_url}/api/tags", timeout=2)
+                except Exception:
+                    st.warning("""No LLM is configured.
+- On Streamlit Cloud: add an OPENAI_API_KEY or GROQ_API_KEY in **Manage app → Secrets**.
+- Locally: run Ollama and pull a model (e.g., `ollama pull phi3:mini`) or set OLLAMA_HOST.
+""")
+                    return None
+                return ChatOllama(model="phi3:mini", base_url=base_url)
 
 
         llm = init_bot()

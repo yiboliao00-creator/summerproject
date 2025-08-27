@@ -6,3 +6,7 @@ scipy
 requests
 langchain-community
 langchain-core
+langchain-openai
+openai>=1.0.0
+langchain-groq
+groq
