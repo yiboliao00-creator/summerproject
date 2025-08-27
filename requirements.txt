@@ -4,3 +4,5 @@ numpy
 plotly>=5.20
 scipy
 requests
+langchain-community
+langchain-core
